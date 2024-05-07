@@ -1,12 +1,12 @@
-package com.example.hourglassaccelerometer;
+package com.example.hourglassaccelerometer
 
+import android.content.res.Resources
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
 import android.view.ViewGroup
-import android.view.animation.AnimationUtils
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 
@@ -14,46 +14,55 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private lateinit var sensorManager: SensorManager
     private lateinit var accelerometer: Sensor
-    private lateinit var sandClockImageView: ImageView
+    private lateinit var containerLayout: ViewGroup
+
+    private val sandList = mutableListOf<ImageView>()
+
+    private var lastTime: Long = 0
+    private var deltaTime: Long = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Инициализация датчика акселерометра и изображения песочных часов
+        containerLayout = findViewById(R.id.containerLayout)
+
+        // Получаем менеджер датчиков и датчик акселерометра
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)!!
-        sandClockImageView = findViewById(R.id.sandClockImageView)
 
-        val containerLayout = findViewById<ViewGroup>(R.id.containerLayout)
+        // Создаем и добавляем песчинки на экран
+        createSand()
+    }
 
-        // Добавляем тысячи песчинок в верхний треугольник
-        for (i in 0 until 1000) {
+    private fun createSand() {
+        val sandCount = 100 // Количество песчинок
+        val sandWidth = 50 // Ширина песчинки в пикселях
+        val sandHeight = 50 // Высота песчинки в пикселях
+
+        for (i in 0 until sandCount) {
             val sandImageView = ImageView(this)
-            sandImageView.setImageResource(R.drawable.sand)
-            sandImageView.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            sandImageView.setImageResource(R.drawable.ic_sand)
+            sandImageView.layoutParams = ViewGroup.LayoutParams(sandWidth, sandHeight)
 
-            // Настраиваем позицию песчинок случайным образом внутри верхнего треугольника
-            val randomX = (Math.random() * 400).toInt()  // Размер экрана
-            val randomY = (Math.random() * 200).toInt()  // Высота верхнего треугольника
-            val layoutParams = sandImageView.layoutParams
-            if (layoutParams is ViewGroup.MarginLayoutParams) {
-                layoutParams.setMargins(randomX, randomY, 0, 0)
-                sandImageView.layoutParams = layoutParams
-            }
+            // Генерируем случайные координаты для размещения песчинки в пределах экрана
+            val randomX = (0 until screenWidth - sandWidth).random()
+            val randomY = (0 until screenHeight - sandHeight).random()
 
+            // Устанавливаем координаты песчинки
+            val layoutParams = ViewGroup.MarginLayoutParams(sandWidth, sandHeight)
+            layoutParams.setMargins(randomX, randomY, 0, 0)
+            sandImageView.layoutParams = layoutParams
 
-            // Запускаем анимацию падения для каждой песчинки
-            val fallingAnimation = AnimationUtils.loadAnimation(this, R.anim.fall_animation)
-            sandImageView.startAnimation(fallingAnimation)
-
+            // Добавляем песчинку на экран
             containerLayout.addView(sandImageView)
+            sandList.add(sandImageView)
         }
     }
 
     override fun onResume() {
         super.onResume()
-        // Регистрация слушателя датчика акселерометра
+        // Регистрируем слушатель для датчика акселерометра
         accelerometer?.let {
             sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
         }
@@ -61,18 +70,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     override fun onPause() {
         super.onPause()
-        // Отмена регистрации слушателя датчика акселерометра при приостановке активности
+        // Отменяем регистрацию слушателя при приостановке активности
         sensorManager.unregisterListener(this)
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
-        // Обработка изменений данных с акселерометра
         event?.let {
             if (it.sensor.type == Sensor.TYPE_ACCELEROMETER) {
-                val x = it.values[0]
-                val y = it.values[1]
-                // Вызываем функцию обновления угла поворота песочных часов
-                updateSandClockRotation(x, y)
+                val xAcceleration = -it.values[0] // Инвертируем значение для соответствия ориентации экрана
+                val yAcceleration = it.values[1]
+                updateSandPositions(xAcceleration, yAcceleration)
             }
         }
     }
@@ -81,18 +88,29 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         // Не используется
     }
 
-    private fun updateSandClockRotation(x: Float, y: Float) {
-        // Вычисляем угол поворота на основе данных с акселерометра
-        val rotationAngle = Math.atan2(y.toDouble(), x.toDouble())
+    private fun updateSandPositions(xAcceleration: Float, yAcceleration: Float) {
+        val currentTime = System.currentTimeMillis()
+        deltaTime = if (lastTime == 0L) 0 else currentTime - lastTime
+        lastTime = currentTime
 
-        // Преобразуем угол из радиан в градусы
-        var degrees = Math.toDegrees(rotationAngle).toFloat()
+        for (sand in sandList) {
+            val layoutParams = sand.layoutParams as ViewGroup.MarginLayoutParams
 
-        // Компенсируем начальный поворот изображения песочных часов (90 градусов)
-        degrees -= 90f
+            // Вычисляем новую вертикальную позицию песчинки
+            var deltaY = yAcceleration * GRAVITY * SAND_SPEED * deltaTime
+            layoutParams.topMargin += deltaY.toInt()
 
-        // Применяем угол поворота к изображению песочных часов
-        sandClockImageView.rotation = -degrees
+            // Обновляем позицию песчинки
+            sand.layoutParams = layoutParams
+        }
     }
 
+    companion object {
+        // Константы для имитации физики
+        private const val GRAVITY = 9.8f // Ускорение свободного падения
+        private const val SAND_SPEED = 0.1f // Скорость падения песчинок
+
+        private val screenHeight = Resources.getSystem().displayMetrics.heightPixels
+        private val screenWidth = Resources.getSystem().displayMetrics.widthPixels
+    }
 }
