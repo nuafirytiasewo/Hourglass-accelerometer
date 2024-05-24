@@ -24,13 +24,17 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private val icons = mutableListOf<ImageView>()
     private val velocities = mutableListOf<Pair<Float, Float>>() // Пары (vx, vy) для каждой иконки
-    private val numIcons = Random.nextInt(1000, 1500)
-    private val scaleIcons = 35
+    private val numIcons = 300
+    private val scaleIcons = 20
     private var screenWidth: Int = 0
     private var screenHeight: Int = 0
     private val gravityScale = 5f
     private val handler = Handler(Looper.getMainLooper())
     private val delayMillis: Long = 16 // примерно 60 кадров в секунду
+    private var spawnAreaStartX: Int = 0
+    private var spawnAreaStartY: Int = 0
+    private var spawnAreaWidth: Int = 0
+    private var spawnAreaHeight: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,20 +46,30 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         screenWidth = displayMetrics.widthPixels
         screenHeight = displayMetrics.heightPixels
 
+        // Определение области спавна
+        spawnAreaWidth = screenWidth / 2
+        spawnAreaHeight = screenHeight / 2
+        spawnAreaStartX = (screenWidth - spawnAreaWidth) / 2
+        spawnAreaStartY = (screenHeight - spawnAreaHeight) / 2
+
         // Инициализация датчика акселерометра
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) ?: throw IllegalStateException("No accelerometer sensor found")
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+            ?: throw IllegalStateException("No accelerometer sensor found")
         sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME)
 
-        // Создание иконок
+        // Создание иконок только в области спавна
         val rootView = findViewById<View>(android.R.id.content) as ViewGroup
         for (i in 0 until numIcons) {
             val icon = ImageView(this)
             icon.setImageResource(R.drawable.ic_sand)
             icon.layoutParams = ViewGroup.LayoutParams(scaleIcons, scaleIcons)
             rootView.addView(icon)
-            icon.x = Random.nextInt(0, screenWidth - scaleIcons).toFloat()
-            icon.y = Random.nextInt(0, screenHeight - scaleIcons).toFloat()
+
+            // Спавн только в центральной области
+            icon.x = Random.nextInt(spawnAreaStartX, spawnAreaStartX + spawnAreaWidth - scaleIcons).toFloat()
+            icon.y = Random.nextInt(spawnAreaStartY, spawnAreaStartY + spawnAreaHeight - scaleIcons).toFloat()
+
             icons.add(icon)
             velocities.add(Pair(0f, 0f)) // начальные скорости (0, 0)
         }
@@ -80,18 +94,18 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             var newY = icon.y + vy
 
             // Обработка столкновений с границами экрана
-            if (newX <= 0) {
-                newX = 0f
+            if (newX <= spawnAreaStartX) {
+                newX = spawnAreaStartX.toFloat()
                 velocities[i] = Pair(-vx, vy)
-            } else if (newX >= screenWidth - icon.width) {
-                newX = (screenWidth - icon.width).toFloat()
+            } else if (newX >= spawnAreaStartX + spawnAreaWidth - scaleIcons) {
+                newX = (spawnAreaStartX + spawnAreaWidth - scaleIcons).toFloat()
                 velocities[i] = Pair(-vx, vy)
             }
-            if (newY <= 0) {
-                newY = 0f
+            if (newY <= spawnAreaStartY) {
+                newY = spawnAreaStartY.toFloat()
                 velocities[i] = Pair(vx, -vy)
-            } else if (newY >= screenHeight - icon.height) {
-                newY = (screenHeight - icon.height).toFloat()
+            } else if (newY >= spawnAreaStartY + spawnAreaHeight - scaleIcons) {
+                newY = (spawnAreaStartY + spawnAreaHeight - scaleIcons).toFloat()
                 velocities[i] = Pair(vx, -vy)
             }
 
@@ -115,7 +129,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         return distance < (icon1.width + icon2.width) / 2
     }
 
-    private val bounceFactor = 0.3f // Уменьшаем коэффициент отскока
+    private val bounceFactor = 0.1f // Уменьшаем коэффициент отскока
 
     private fun resolveCollision(i: Int, j: Int) {
         val icon1 = icons[i]
