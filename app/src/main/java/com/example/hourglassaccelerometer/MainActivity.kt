@@ -24,7 +24,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private val icons = mutableListOf<ImageView>()
     private val velocities = mutableListOf<Pair<Float, Float>>() // Пары (vx, vy) для каждой иконки
-    private val numIcons = Random.nextInt(3, 21)
+    private val numIcons = Random.nextInt(1000, 1500)
+    private val scaleIcons = 35
     private var screenWidth: Int = 0
     private var screenHeight: Int = 0
     private val gravityScale = 5f
@@ -51,10 +52,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         for (i in 0 until numIcons) {
             val icon = ImageView(this)
             icon.setImageResource(R.drawable.ic_sand)
-            icon.layoutParams = ViewGroup.LayoutParams(100, 100)
+            icon.layoutParams = ViewGroup.LayoutParams(scaleIcons, scaleIcons)
             rootView.addView(icon)
-            icon.x = Random.nextInt(0, screenWidth - 100).toFloat()
-            icon.y = Random.nextInt(0, screenHeight - 100).toFloat()
+            icon.x = Random.nextInt(0, screenWidth - scaleIcons).toFloat()
+            icon.y = Random.nextInt(0, screenHeight - scaleIcons).toFloat()
             icons.add(icon)
             velocities.add(Pair(0f, 0f)) // начальные скорости (0, 0)
         }
