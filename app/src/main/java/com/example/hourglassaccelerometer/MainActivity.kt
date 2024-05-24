@@ -1,116 +1,63 @@
+// MainActivity.kt
 package com.example.hourglassaccelerometer
 
-import android.content.res.Resources
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
 import android.os.Bundle
-import android.view.ViewGroup
+import android.os.Handler
+import android.os.Looper
+import android.util.DisplayMetrics
+import android.view.View
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import com.example.hourglassaccelerometer.R
+import kotlin.random.Random
 
-class MainActivity : AppCompatActivity(), SensorEventListener {
+class MainActivity : AppCompatActivity() {
 
-    private lateinit var sensorManager: SensorManager
-    private lateinit var accelerometer: Sensor
-    private lateinit var containerLayout: ViewGroup
-
-    private val sandList = mutableListOf<ImageView>()
-
-    private var lastTime: Long = 0
-    private var deltaTime: Long = 0
+    private lateinit var handler: Handler
+    private lateinit var runnable: Runnable
+    private val delayMillis: Long = 3000 // 3 секунды
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        containerLayout = findViewById(R.id.containerLayout)
+        // Получение размеров экрана
+        val displayMetrics = DisplayMetrics()
+        windowManager.defaultDisplay.getMetrics(displayMetrics)
+        val screenWidth = displayMetrics.widthPixels
+        val screenHeight = displayMetrics.heightPixels
 
-        // Получаем менеджер датчиков и датчик акселерометра
-        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)!!
+        // Инициализация ImageView
+        val icSand: ImageView = findViewById(R.id.ic_sand)
 
-        // Создаем и добавляем песчинки на экран
-        createSand()
-    }
-
-    private fun createSand() {
-        val sandCount = 100 // Количество песчинок
-        val sandWidth = 50 // Ширина песчинки в пикселях
-        val sandHeight = 50 // Высота песчинки в пикселях
-
-        for (i in 0 until sandCount) {
-            val sandImageView = ImageView(this)
-            sandImageView.setImageResource(R.drawable.ic_sand)
-            sandImageView.layoutParams = ViewGroup.LayoutParams(sandWidth, sandHeight)
-
-            // Генерируем случайные координаты для размещения песчинки в пределах экрана
-            val randomX = (0 until screenWidth - sandWidth).random()
-            val randomY = (0 until screenHeight - sandHeight).random()
-
-            // Устанавливаем координаты песчинки
-            val layoutParams = ViewGroup.MarginLayoutParams(sandWidth, sandHeight)
-            layoutParams.setMargins(randomX, randomY, 0, 0)
-            sandImageView.layoutParams = layoutParams
-
-            // Добавляем песчинку на экран
-            containerLayout.addView(sandImageView)
-            sandList.add(sandImageView)
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // Регистрируем слушатель для датчика акселерометра
-        accelerometer?.let {
-            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
-        }
-    }
-
-    override fun onPause() {
-        super.onPause()
-        // Отменяем регистрацию слушателя при приостановке активности
-        sensorManager.unregisterListener(this)
-    }
-
-    override fun onSensorChanged(event: SensorEvent?) {
-        event?.let {
-            if (it.sensor.type == Sensor.TYPE_ACCELEROMETER) {
-                val xAcceleration = -it.values[0] // Инвертируем значение для соответствия ориентации экрана
-                val yAcceleration = it.values[1]
-                updateSandPositions(xAcceleration, yAcceleration)
+        handler = Handler(Looper.getMainLooper())
+        runnable = object : Runnable {
+            override fun run() {
+                moveIconRandomly(icSand, screenWidth, screenHeight)
+                handler.postDelayed(this, delayMillis)
             }
         }
+
+        // Запуск авто-перемещения
+        handler.post(runnable)
     }
 
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        // Не используется
+    private fun moveIconRandomly(icSand: ImageView, screenWidth: Int, screenHeight: Int) {
+        // Размеры иконки
+        val iconWidth = icSand.width
+        val iconHeight = icSand.height
+
+        // Генерация случайных координат
+        val randomX = Random.nextInt(0, screenWidth - iconWidth).toFloat()
+        val randomY = Random.nextInt(0, screenHeight - iconHeight).toFloat()
+
+        // Установка новых координат для иконки
+        icSand.x = randomX
+        icSand.y = randomY
     }
 
-    private fun updateSandPositions(xAcceleration: Float, yAcceleration: Float) {
-        val currentTime = System.currentTimeMillis()
-        deltaTime = if (lastTime == 0L) 0 else currentTime - lastTime
-        lastTime = currentTime
-
-        for (sand in sandList) {
-            val layoutParams = sand.layoutParams as ViewGroup.MarginLayoutParams
-
-            // Вычисляем новую вертикальную позицию песчинки
-            var deltaY = yAcceleration * GRAVITY * SAND_SPEED * deltaTime
-            layoutParams.topMargin += deltaY.toInt()
-
-            // Обновляем позицию песчинки
-            sand.layoutParams = layoutParams
-        }
-    }
-
-    companion object {
-        // Константы для имитации физики
-        private const val GRAVITY = 9.8f // Ускорение свободного падения
-        private const val SAND_SPEED = 0.1f // Скорость падения песчинок
-
-        private val screenHeight = Resources.getSystem().displayMetrics.heightPixels
-        private val screenWidth = Resources.getSystem().displayMetrics.widthPixels
+    override fun onDestroy() {
+        super.onDestroy()
+        handler.removeCallbacks(runnable) // Остановить авто-перемещение при уничтожении активности
     }
 }
