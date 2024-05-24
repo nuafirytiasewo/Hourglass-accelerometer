@@ -1,11 +1,11 @@
 // MainActivity.kt
 package com.example.hourglassaccelerometer
 
+import android.animation.ObjectAnimator
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.DisplayMetrics
-import android.view.View
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import com.example.hourglassaccelerometer.R
@@ -33,7 +33,7 @@ class MainActivity : AppCompatActivity() {
         handler = Handler(Looper.getMainLooper())
         runnable = object : Runnable {
             override fun run() {
-                moveIconRandomly(icSand, screenWidth, screenHeight)
+                moveIconWithAnimation(icSand, screenWidth, screenHeight)
                 handler.postDelayed(this, delayMillis)
             }
         }
@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity() {
         handler.post(runnable)
     }
 
-    private fun moveIconRandomly(icSand: ImageView, screenWidth: Int, screenHeight: Int) {
+    private fun moveIconWithAnimation(icSand: ImageView, screenWidth: Int, screenHeight: Int) {
         // Размеры иконки
         val iconWidth = icSand.width
         val iconHeight = icSand.height
@@ -51,9 +51,17 @@ class MainActivity : AppCompatActivity() {
         val randomX = Random.nextInt(0, screenWidth - iconWidth).toFloat()
         val randomY = Random.nextInt(0, screenHeight - iconHeight).toFloat()
 
-        // Установка новых координат для иконки
-        icSand.x = randomX
-        icSand.y = randomY
+        // Анимация перемещения по X
+        val animatorX = ObjectAnimator.ofFloat(icSand, "x", icSand.x, randomX)
+        animatorX.duration = 1000 // Продолжительность анимации 1 секунда
+
+        // Анимация перемещения по Y
+        val animatorY = ObjectAnimator.ofFloat(icSand, "y", icSand.y, randomY)
+        animatorY.duration = 1000 // Продолжительность анимации 1 секунда
+
+        // Запуск анимаций
+        animatorX.start()
+        animatorY.start()
     }
 
     override fun onDestroy() {
