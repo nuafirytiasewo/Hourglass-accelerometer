@@ -1,21 +1,24 @@
 // MainActivity.kt
 package com.example.hourglassaccelerometer
 
-import android.animation.ObjectAnimator
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.DisplayMetrics
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import com.example.hourglassaccelerometer.R
-import kotlin.random.Random
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), SensorEventListener {
 
-    private lateinit var handler: Handler
-    private lateinit var runnable: Runnable
-    private val delayMillis: Long = 3000 // 3 секунды
+    private lateinit var sensorManager: SensorManager
+    private lateinit var accelerometer: Sensor
+
+    private lateinit var icSand: ImageView
+    private var screenWidth: Int = 0
+    private var screenHeight: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,48 +27,52 @@ class MainActivity : AppCompatActivity() {
         // Получение размеров экрана
         val displayMetrics = DisplayMetrics()
         windowManager.defaultDisplay.getMetrics(displayMetrics)
-        val screenWidth = displayMetrics.widthPixels
-        val screenHeight = displayMetrics.heightPixels
+        screenWidth = displayMetrics.widthPixels
+        screenHeight = displayMetrics.heightPixels
 
         // Инициализация ImageView
-        val icSand: ImageView = findViewById(R.id.ic_sand)
+        icSand = findViewById(R.id.ic_sand)
 
-        handler = Handler(Looper.getMainLooper())
-        runnable = object : Runnable {
-            override fun run() {
-                moveIconWithAnimation(icSand, screenWidth, screenHeight)
-                handler.postDelayed(this, delayMillis)
-            }
-        }
+        // Настройка датчика акселерометра
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)!!
 
-        // Запуск авто-перемещения
-        handler.post(runnable)
+        // Регистрация слушателя датчика
+        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL)
     }
 
-    private fun moveIconWithAnimation(icSand: ImageView, screenWidth: Int, screenHeight: Int) {
-        // Размеры иконки
-        val iconWidth = icSand.width
-        val iconHeight = icSand.height
+    override fun onSensorChanged(event: SensorEvent) {
+        if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
+            // Обработка данных акселерометра
+            val x = event.values[0]
+            val y = event.values[1]
 
-        // Генерация случайных координат
-        val randomX = Random.nextInt(0, screenWidth - iconWidth).toFloat()
-        val randomY = Random.nextInt(0, screenHeight - iconHeight).toFloat()
+            // Перемещение иконки в зависимости от значений акселерометра
+            moveIconWithGravity(x, y)
+        }
+    }
 
-        // Анимация перемещения по X
-        val animatorX = ObjectAnimator.ofFloat(icSand, "x", icSand.x, randomX)
-        animatorX.duration = 1000 // Продолжительность анимации 1 секунда
+    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
+        // Здесь можно обработать изменения точности сенсора
+    }
 
-        // Анимация перемещения по Y
-        val animatorY = ObjectAnimator.ofFloat(icSand, "y", icSand.y, randomY)
-        animatorY.duration = 1000 // Продолжительность анимации 1 секунда
+    private fun moveIconWithGravity(x: Float, y: Float) {
+        // Получение текущих координат
+        val currentX = icSand.x
+        val currentY = icSand.y
 
-        // Запуск анимаций
-        animatorX.start()
-        animatorY.start()
+        // Рассчет новых координат
+        val newX = currentX - x * 5
+        val newY = currentY + y * 5
+
+        // Убедитесь, что иконка остается в пределах экрана
+        icSand.x = newX.coerceIn(0f, (screenWidth - icSand.width).toFloat())
+        icSand.y = newY.coerceIn(0f, (screenHeight - icSand.height).toFloat())
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        handler.removeCallbacks(runnable) // Остановить авто-перемещение при уничтожении активности
+        // Отмена регистрации слушателя датчика
+        sensorManager.unregisterListener(this)
     }
 }
