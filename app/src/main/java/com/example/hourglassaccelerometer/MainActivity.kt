@@ -1,6 +1,9 @@
 // MainActivity.kt
 package com.example.hourglassaccelerometer
 
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -11,11 +14,12 @@ import android.os.Looper
 import android.util.DisplayMetrics
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
-import kotlin.random.Random
 import kotlin.math.abs
 import kotlin.math.sqrt
+import kotlin.random.Random
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
@@ -35,6 +39,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var spawnAreaStartY: Int = 0
     private var spawnAreaWidth: Int = 0
     private var spawnAreaHeight: Int = 0
+
+    private lateinit var hourglassView: HourglassView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,7 +65,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME)
 
         // Создание иконок только в области спавна
-        val rootView = findViewById<View>(android.R.id.content) as ViewGroup
+        val rootView = findViewById<FrameLayout>(R.id.root_view)
         for (i in 0 until numIcons) {
             val icon = ImageView(this)
             icon.setImageResource(R.drawable.ic_sand)
@@ -74,12 +80,17 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             velocities.add(Pair(0f, 0f)) // начальные скорости (0, 0)
         }
 
+        // Добавление визуализации области спавна
+        hourglassView = HourglassView(this)
+        rootView.addView(hourglassView)
+
         handler.post(runnable)
     }
 
     private val runnable = object : Runnable {
         override fun run() {
             updatePhysics()
+            hourglassView.invalidate() // Перерисовываем область
             handler.postDelayed(this, delayMillis)
         }
     }
@@ -184,5 +195,25 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         // Отмена регистрации слушателя датчика
         sensorManager.unregisterListener(this)
         handler.removeCallbacks(runnable) // Остановка обновления физики
+    }
+
+    inner class HourglassView(context: MainActivity) : View(context) {
+        private val paint = Paint()
+
+        init {
+            paint.color = 0x66FF0000 // Прозрачный красный для визуализации
+            paint.style = Paint.Style.FILL
+        }
+
+        override fun onDraw(canvas: Canvas) {
+            super.onDraw(canvas)
+            canvas.drawRect(
+                spawnAreaStartX.toFloat(),
+                spawnAreaStartY.toFloat(),
+                (spawnAreaStartX + spawnAreaWidth).toFloat(),
+                (spawnAreaStartY + spawnAreaHeight).toFloat(),
+                paint
+            )
+        }
     }
 }
