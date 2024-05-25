@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private val scaleIcons = 20
     private var screenWidth: Int = 0
     private var screenHeight: Int = 0
-    private val gravityScale = 5f
+    private val gravityScale = 1f
     private val handler = Handler(Looper.getMainLooper())
     private val delayMillis: Long = 16 // примерно 60 кадров в секунду
     private var spawnAreaStartX: Int = 0
