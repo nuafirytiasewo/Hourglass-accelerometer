@@ -115,13 +115,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             icon.x = newX
             icon.y = newY
 
-            // Обработка столкновений между иконками
-            for (j in i + 1 until icons.size) {
-                val otherIcon = icons[j]
-                if (checkCollision(icon, otherIcon)) {
-                    resolveCollision(i, j)
-                }
-            }
+//            // Обработка столкновений между иконками
+//            for (j in i + 1 until icons.size) {
+//                val otherIcon = icons[j]
+//                if (checkCollision(icon, otherIcon)) {
+//                    resolveCollision(i, j)
+//                }
+//            }
         }
     }
 
