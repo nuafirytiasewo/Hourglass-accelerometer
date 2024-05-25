@@ -192,15 +192,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private fun isPointInsideHourglass(px: Float, py: Float): Boolean {
         val topTrapezoid = isPointInsideTrapezoid(px, py,
             spawnAreaStartX.toFloat(), spawnAreaStartY.toFloat(),
-            spawnAreaStartX + spawnAreaWidth / 4f, spawnAreaStartY + spawnAreaHeight / 2f,
-            spawnAreaStartX + 3 * spawnAreaWidth / 4f, spawnAreaStartY + spawnAreaHeight / 2f,
+            spawnAreaStartX + spawnAreaWidth / 3f, spawnAreaStartY + spawnAreaHeight / 2f,
+            spawnAreaStartX + 2 * spawnAreaWidth / 3f, spawnAreaStartY + spawnAreaHeight / 2f,
             spawnAreaStartX + spawnAreaWidth.toFloat(), spawnAreaStartY.toFloat()
         )
 
         val bottomTrapezoid = isPointInsideTrapezoid(px, py,
             spawnAreaStartX.toFloat(), spawnAreaStartY + spawnAreaHeight.toFloat(),
-            spawnAreaStartX + spawnAreaWidth / 4f, spawnAreaStartY + spawnAreaHeight / 2f,
-            spawnAreaStartX + 3 * spawnAreaWidth / 4f, spawnAreaStartY + spawnAreaHeight / 2f,
+            spawnAreaStartX + spawnAreaWidth / 3f, spawnAreaStartY + spawnAreaHeight / 2f,
+            spawnAreaStartX + 2 * spawnAreaWidth / 3f, spawnAreaStartY + spawnAreaHeight / 2f,
             spawnAreaStartX + spawnAreaWidth.toFloat(), spawnAreaStartY + spawnAreaHeight.toFloat()
         )
 
@@ -237,15 +237,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             path.reset()
             // Верхняя трапеция
             path.moveTo(spawnAreaStartX.toFloat(), spawnAreaStartY.toFloat())
-            path.lineTo((spawnAreaStartX + spawnAreaWidth / 4).toFloat(), (spawnAreaStartY + spawnAreaHeight / 2).toFloat())
-            path.lineTo((spawnAreaStartX + 3 * spawnAreaWidth / 4).toFloat(), (spawnAreaStartY + spawnAreaHeight / 2).toFloat())
+            path.lineTo((spawnAreaStartX + spawnAreaWidth / 3).toFloat(), (spawnAreaStartY + spawnAreaHeight / 2).toFloat())
+            path.lineTo((spawnAreaStartX + 2 * spawnAreaWidth / 3).toFloat(), (spawnAreaStartY + spawnAreaHeight / 2).toFloat())
             path.lineTo((spawnAreaStartX + spawnAreaWidth).toFloat(), spawnAreaStartY.toFloat())
             path.close()
 
             // Нижняя трапеция
             path.moveTo(spawnAreaStartX.toFloat(), (spawnAreaStartY + spawnAreaHeight).toFloat())
-            path.lineTo((spawnAreaStartX + spawnAreaWidth / 4).toFloat(), (spawnAreaStartY + spawnAreaHeight / 2).toFloat())
-            path.lineTo((spawnAreaStartX + 3 * spawnAreaWidth / 4).toFloat(), (spawnAreaStartY + spawnAreaHeight / 2).toFloat())
+            path.lineTo((spawnAreaStartX + spawnAreaWidth / 3).toFloat(), (spawnAreaStartY + spawnAreaHeight / 2).toFloat())
+            path.lineTo((spawnAreaStartX + 2 * spawnAreaWidth / 3).toFloat(), (spawnAreaStartY + spawnAreaHeight / 2).toFloat())
             path.lineTo((spawnAreaStartX + spawnAreaWidth).toFloat(), (spawnAreaStartY + spawnAreaHeight).toFloat())
             path.close()
 
