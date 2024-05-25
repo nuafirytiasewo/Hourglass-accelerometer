@@ -1,9 +1,8 @@
-// MainActivity.kt
 package com.example.hourglassaccelerometer
 
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.graphics.RectF
+import android.graphics.Path
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -73,8 +72,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             rootView.addView(icon)
 
             // Спавн только в центральной области
-            icon.x = Random.nextInt(spawnAreaStartX, spawnAreaStartX + spawnAreaWidth - scaleIcons).toFloat()
-            icon.y = Random.nextInt(spawnAreaStartY, spawnAreaStartY + spawnAreaHeight - scaleIcons).toFloat()
+            do {
+                icon.x = Random.nextInt(spawnAreaStartX, spawnAreaStartX + spawnAreaWidth - scaleIcons).toFloat()
+                icon.y = Random.nextInt(spawnAreaStartY, spawnAreaStartY + spawnAreaHeight - scaleIcons).toFloat()
+            } while (!isPointInsideHourglass(icon.x, icon.y))
 
             icons.add(icon)
             velocities.add(Pair(0f, 0f)) // начальные скорости (0, 0)
@@ -104,20 +105,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             var newX = icon.x + vx
             var newY = icon.y + vy
 
-            // Обработка столкновений с границами экрана
-            if (newX <= spawnAreaStartX) {
-                newX = spawnAreaStartX.toFloat()
-                velocities[i] = Pair(-vx, vy)
-            } else if (newX >= spawnAreaStartX + spawnAreaWidth - scaleIcons) {
-                newX = (spawnAreaStartX + spawnAreaWidth - scaleIcons).toFloat()
-                velocities[i] = Pair(-vx, vy)
-            }
-            if (newY <= spawnAreaStartY) {
-                newY = spawnAreaStartY.toFloat()
-                velocities[i] = Pair(vx, -vy)
-            } else if (newY >= spawnAreaStartY + spawnAreaHeight - scaleIcons) {
-                newY = (spawnAreaStartY + spawnAreaHeight - scaleIcons).toFloat()
-                velocities[i] = Pair(vx, -vy)
+            // Обработка столкновений с границами области песочных часов
+            if (!isPointInsideHourglass(newX, newY)) {
+                newX = icon.x - vx
+                newY = icon.y - vy
+                velocities[i] = Pair(-vx * 0.5f, -vy * 0.5f) // Уменьшаем скорость при столкновении с границей
             }
 
             icon.x = newX
@@ -197,8 +189,40 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         handler.removeCallbacks(runnable) // Остановка обновления физики
     }
 
+    private fun isPointInsideHourglass(px: Float, py: Float): Boolean {
+        val topTriangle = isPointInsideTriangle(px, py,
+            spawnAreaStartX.toFloat(), spawnAreaStartY.toFloat(),
+            spawnAreaStartX + spawnAreaWidth / 2f, spawnAreaStartY + spawnAreaHeight / 2f,
+            spawnAreaStartX + spawnAreaWidth.toFloat(), spawnAreaStartY.toFloat()
+        )
+
+        val bottomTriangle = isPointInsideTriangle(px, py,
+            spawnAreaStartX.toFloat(), spawnAreaStartY + spawnAreaHeight.toFloat(),
+            spawnAreaStartX + spawnAreaWidth / 2f, spawnAreaStartY + spawnAreaHeight / 2f,
+            spawnAreaStartX + spawnAreaWidth.toFloat(), spawnAreaStartY + spawnAreaHeight.toFloat()
+        )
+
+        return topTriangle || bottomTriangle
+    }
+
+    private fun isPointInsideTriangle(px: Float, py: Float, x1: Float, y1: Float, x2: Float, y2: Float, x3: Float, y3: Float): Boolean {
+        val d1 = sign(px, py, x1, y1, x2, y2)
+        val d2 = sign(px, py, x2, y2, x3, y3)
+        val d3 = sign(px, py, x3, y3, x1, y1)
+
+        val hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0)
+        val hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0)
+
+        return !(hasNeg && hasPos)
+    }
+
+    private fun sign(px: Float, py: Float, x1: Float, y1: Float, x2: Float, y2: Float): Float {
+        return (px - x2) * (y1 - y2) - (x1 - x2) * (py - y2)
+    }
+
     inner class HourglassView(context: MainActivity) : View(context) {
         private val paint = Paint()
+        private val path = Path()
 
         init {
             paint.color = 0x66FF0000 // Прозрачный красный для визуализации
@@ -207,13 +231,20 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
-            canvas.drawRect(
-                spawnAreaStartX.toFloat(),
-                spawnAreaStartY.toFloat(),
-                (spawnAreaStartX + spawnAreaWidth).toFloat(),
-                (spawnAreaStartY + spawnAreaHeight).toFloat(),
-                paint
-            )
+            path.reset()
+            // Верхний треугольник
+            path.moveTo(spawnAreaStartX.toFloat(), spawnAreaStartY.toFloat())
+            path.lineTo((spawnAreaStartX + spawnAreaWidth / 2).toFloat(), (spawnAreaStartY + spawnAreaHeight / 2).toFloat())
+            path.lineTo((spawnAreaStartX + spawnAreaWidth).toFloat(), spawnAreaStartY.toFloat())
+            path.close()
+
+            // Нижний треугольник
+            path.moveTo(spawnAreaStartX.toFloat(), (spawnAreaStartY + spawnAreaHeight).toFloat())
+            path.lineTo((spawnAreaStartX + spawnAreaWidth / 2).toFloat(), (spawnAreaStartY + spawnAreaHeight / 2).toFloat())
+            path.lineTo((spawnAreaStartX + spawnAreaWidth).toFloat(), (spawnAreaStartY + spawnAreaHeight).toFloat())
+            path.close()
+
+            canvas.drawPath(path, paint)
         }
     }
 }
