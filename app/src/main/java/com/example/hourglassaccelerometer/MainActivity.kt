@@ -190,28 +190,31 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun isPointInsideHourglass(px: Float, py: Float): Boolean {
-        val topTriangle = isPointInsideTriangle(px, py,
+        val topTrapezoid = isPointInsideTrapezoid(px, py,
             spawnAreaStartX.toFloat(), spawnAreaStartY.toFloat(),
-            spawnAreaStartX + spawnAreaWidth / 2f, spawnAreaStartY + spawnAreaHeight / 2f,
+            spawnAreaStartX + spawnAreaWidth / 4f, spawnAreaStartY + spawnAreaHeight / 2f,
+            spawnAreaStartX + 3 * spawnAreaWidth / 4f, spawnAreaStartY + spawnAreaHeight / 2f,
             spawnAreaStartX + spawnAreaWidth.toFloat(), spawnAreaStartY.toFloat()
         )
 
-        val bottomTriangle = isPointInsideTriangle(px, py,
+        val bottomTrapezoid = isPointInsideTrapezoid(px, py,
             spawnAreaStartX.toFloat(), spawnAreaStartY + spawnAreaHeight.toFloat(),
-            spawnAreaStartX + spawnAreaWidth / 2f, spawnAreaStartY + spawnAreaHeight / 2f,
+            spawnAreaStartX + spawnAreaWidth / 4f, spawnAreaStartY + spawnAreaHeight / 2f,
+            spawnAreaStartX + 3 * spawnAreaWidth / 4f, spawnAreaStartY + spawnAreaHeight / 2f,
             spawnAreaStartX + spawnAreaWidth.toFloat(), spawnAreaStartY + spawnAreaHeight.toFloat()
         )
 
-        return topTriangle || bottomTriangle
+        return topTrapezoid || bottomTrapezoid
     }
 
-    private fun isPointInsideTriangle(px: Float, py: Float, x1: Float, y1: Float, x2: Float, y2: Float, x3: Float, y3: Float): Boolean {
+    private fun isPointInsideTrapezoid(px: Float, py: Float, x1: Float, y1: Float, x2: Float, y2: Float, x3: Float, y3: Float, x4: Float, y4: Float): Boolean {
         val d1 = sign(px, py, x1, y1, x2, y2)
         val d2 = sign(px, py, x2, y2, x3, y3)
-        val d3 = sign(px, py, x3, y3, x1, y1)
+        val d3 = sign(px, py, x3, y3, x4, y4)
+        val d4 = sign(px, py, x4, y4, x1, y1)
 
-        val hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0)
-        val hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0)
+        val hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0) || (d4 < 0)
+        val hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0) || (d4 > 0)
 
         return !(hasNeg && hasPos)
     }
@@ -232,15 +235,17 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
             path.reset()
-            // Верхний треугольник
+            // Верхняя трапеция
             path.moveTo(spawnAreaStartX.toFloat(), spawnAreaStartY.toFloat())
-            path.lineTo((spawnAreaStartX + spawnAreaWidth / 2).toFloat(), (spawnAreaStartY + spawnAreaHeight / 2).toFloat())
+            path.lineTo((spawnAreaStartX + spawnAreaWidth / 4).toFloat(), (spawnAreaStartY + spawnAreaHeight / 2).toFloat())
+            path.lineTo((spawnAreaStartX + 3 * spawnAreaWidth / 4).toFloat(), (spawnAreaStartY + spawnAreaHeight / 2).toFloat())
             path.lineTo((spawnAreaStartX + spawnAreaWidth).toFloat(), spawnAreaStartY.toFloat())
             path.close()
 
-            // Нижний треугольник
+            // Нижняя трапеция
             path.moveTo(spawnAreaStartX.toFloat(), (spawnAreaStartY + spawnAreaHeight).toFloat())
-            path.lineTo((spawnAreaStartX + spawnAreaWidth / 2).toFloat(), (spawnAreaStartY + spawnAreaHeight / 2).toFloat())
+            path.lineTo((spawnAreaStartX + spawnAreaWidth / 4).toFloat(), (spawnAreaStartY + spawnAreaHeight / 2).toFloat())
+            path.lineTo((spawnAreaStartX + 3 * spawnAreaWidth / 4).toFloat(), (spawnAreaStartY + spawnAreaHeight / 2).toFloat())
             path.lineTo((spawnAreaStartX + spawnAreaWidth).toFloat(), (spawnAreaStartY + spawnAreaHeight).toFloat())
             path.close()
 
