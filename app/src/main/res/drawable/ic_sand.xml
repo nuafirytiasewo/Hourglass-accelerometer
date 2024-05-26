@@ -1,11 +1,10 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
+    android:width="20dp"
+    android:height="20dp"
+    android:viewportWidth="20"
+    android:viewportHeight="20">
 
-    <!-- Центр круга находится в (12, 12), поэтому радиус круга равен 10 (24 / 2 = 12 - 2) -->
     <path
         android:fillColor="#FFA726"
-        android:pathData="M12,12m-10,0a10,10 0 1,0 20,0a10,10 0 1,0 -20,0"/>
+        android:pathData="M10,10m-10,0a10,10 0 1,0 20,0a10,10 0 1,0 -20,0"/>
 </vector>
