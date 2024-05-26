@@ -22,23 +22,34 @@ import kotlin.random.Random
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
+    // Инициализация сенсорного менеджера и акселерометра
     private lateinit var sensorManager: SensorManager
     private lateinit var accelerometer: Sensor
 
+    // Списки для хранения иконок и их скоростей
     private val icons = mutableListOf<ImageView>()
     private val velocities = mutableListOf<Pair<Float, Float>>() // Пары (vx, vy) для каждой иконки
+
+    // Константы для количества иконок, их размера и масштаба гравитации
     private val numIcons = 300
     private val scaleIcons = 20
+    private val gravityScale = 1f
+
+    // Переменные для хранения размеров экрана
     private var screenWidth: Int = 0
     private var screenHeight: Int = 0
-    private val gravityScale = 1f
+
+    // Переменные для обработки обновления физики
     private val handler = Handler(Looper.getMainLooper())
     private val delayMillis: Long = 16 // примерно 60 кадров в секунду
+
+    // Переменные для определения области спавна
     private var spawnAreaStartX: Int = 0
     private var spawnAreaStartY: Int = 0
     private var spawnAreaWidth: Int = 0
     private var spawnAreaHeight: Int = 0
 
+    // Объект для отображения песочных часов
     private lateinit var hourglassView: HourglassView
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -88,6 +99,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         handler.post(runnable)
     }
 
+    // Runnable для обновления физики с определенной задержкой
     private val runnable = object : Runnable {
         override fun run() {
             updatePhysics()
@@ -96,6 +108,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
     }
 
+    // Обновление физики для каждого кадра
     private fun updatePhysics() {
         for (i in icons.indices) {
             val icon = icons[i]
@@ -114,17 +127,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
             icon.x = newX
             icon.y = newY
-
-//            // Обработка столкновений между иконками
-//            for (j in i + 1 until icons.size) {
-//                val otherIcon = icons[j]
-//                if (checkCollision(icon, otherIcon)) {
-//                    resolveCollision(i, j)
-//                }
-//            }
         }
     }
 
+    // Проверка столкновений между иконками
     private fun checkCollision(icon1: ImageView, icon2: ImageView): Boolean {
         val dx = icon1.x - icon2.x
         val dy = icon1.y - icon2.y
@@ -132,8 +138,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         return distance < (icon1.width + icon2.width) / 2
     }
 
+    // Обработка столкновений между иконками
     private val bounceFactor = 0.1f // Уменьшаем коэффициент отскока
-
     private fun resolveCollision(i: Int, j: Int) {
         val icon1 = icons[i]
         val icon2 = icons[j]
@@ -163,7 +169,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         velocities[j] = Pair(vx1 * bounceFactor, vy1 * bounceFactor)
     }
 
-
+    // Обработка изменений сенсора
     override fun onSensorChanged(event: SensorEvent) {
         if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
             // Обработка данных акселерометра
@@ -178,17 +184,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
     }
 
+    // Обработка изменений точности сенсора
     override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
         // Здесь можно обработать изменения точности сенсора
     }
 
+    // Отмена регистрации слушателя сенсора при уничтожении активности
     override fun onDestroy() {
         super.onDestroy()
-        // Отмена регистрации слушателя датчика
         sensorManager.unregisterListener(this)
         handler.removeCallbacks(runnable) // Остановка обновления физики
     }
 
+    // Проверка, находится ли точка внутри песочных часов
     private fun isPointInsideHourglass(px: Float, py: Float): Boolean {
         val topTrapezoid = isPointInsideTrapezoid(px, py,
             spawnAreaStartX.toFloat(), spawnAreaStartY.toFloat(),
@@ -207,6 +215,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         return topTrapezoid || bottomTrapezoid
     }
 
+    // Проверка, находится ли точка внутри трапеции
     private fun isPointInsideTrapezoid(px: Float, py: Float, x1: Float, y1: Float, x2: Float, y2: Float, x3: Float, y3: Float, x4: Float, y4: Float): Boolean {
         val d1 = sign(px, py, x1, y1, x2, y2)
         val d2 = sign(px, py, x2, y2, x3, y3)
@@ -219,10 +228,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         return !(hasNeg && hasPos)
     }
 
+    // Вычисление знака для определения положения точки относительно линии
     private fun sign(px: Float, py: Float, x1: Float, y1: Float, x2: Float, y2: Float): Float {
         return (px - x2) * (y1 - y2) - (x1 - x2) * (py - y2)
     }
 
+    // Класс для отображения области песочных часов
     inner class HourglassView(context: MainActivity) : View(context) {
         private val paint = Paint()
         private val path = Path()
